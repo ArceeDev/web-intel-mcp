@@ -80,3 +80,7 @@ End-to-end with a fake KeyFlint quota gateway, locally signed licenses and a loc
 pip install -e ".[test]"
 python -m pytest -q
 ```
+
+## License
+
+Business Source License 1.1. Source available; production use needs a KeyFlint license (or must be non-commercial). Each version becomes Apache 2.0 four years after release. See [LICENSE](LICENSE).
