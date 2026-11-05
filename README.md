@@ -44,6 +44,13 @@ claude mcp add web-intel -e KEYFLINT_LICENSE=LIC-... -- uvx web-intel-mcp
 
 Optional: `KEYFLINT_URL`, `KEYFLINT_PUBLIC_KEYS` (fetched from the gateway and cached in `~/.keyflint/keyring.json` when unset), `KEYFLINT_CHECKOUT_URL`.
 
+## Visual cards (MCP Apps)
+
+In Claude, ChatGPT, VS Code and Goose every paid tool and `credits_balance` renders as an interactive card in the
+chat: credit balance with a refill bar and a buy button, or a result summary (key figures, issues, table preview and
+credits charged). It is the `ui://web-intel/card.html` resource, self-contained with no network access. Other clients
+keep getting the same JSON as before.
+
 ## Hosted mode (sellers)
 
 Paid logic stays on your server. One process bills many buyers; each
