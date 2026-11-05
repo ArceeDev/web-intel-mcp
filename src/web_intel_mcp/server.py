@@ -53,11 +53,25 @@ def _headers(ctx: Context) -> Any:
         return None
 
 
-async def _paid(ctx: Context, tool: str, url: str, credits: int | None = None) -> tuple[analyze.Page, dict]:
+def _ok(page: analyze.Page) -> analyze.Page:
+    if page.status >= 400:
+        raise FetchError(f"{page.final_url} returned HTTP {page.status}; credits refunded.")
+    return page
+
+
+def _run(fn: Any, *args: Any) -> Any:
+    """Analysis guard: pathological HTML becomes a clean, refunded error instead of a crash."""
+    try:
+        return fn(*args)
+    except RecursionError as exc:
+        raise FetchError("The page HTML is nested too deeply to parse; credits refunded.") from exc
+
+
+async def _paid(ctx: Context, tool: str, url: str, fn: Any, *args: Any) -> tuple[dict, dict]:
     url = validate_url(url)  # bad input is rejected before any debit
-    async with billing.charge(credits or PRICES[tool], tool, _headers(ctx)) as receipt:
-        page = await fetch(url)
-    return page, receipt
+    async with billing.charge(PRICES[tool], tool, _headers(ctx)) as receipt:
+        out = _run(fn, _ok(await fetch(url)), *args)
+    return out, receipt
 
 
 def _billing_note(receipt: dict, credits: int) -> dict[str, Any]:
@@ -74,41 +88,36 @@ async def read_url(url: str, ctx: Context, max_chars: int = 20000) -> dict[str, 
     """
     max_chars = max(500, min(int(max_chars), 100_000))
     url = validate_url(url)
-    async with billing.charge(PRICES["read_url"], "read_url", _headers(ctx)) as receipt:
-        page = await fetch(url)
-        if page.status >= 400:
-            raise FetchError(f"{page.final_url} returned HTTP {page.status}; credits refunded.")
-        out = analyze.to_markdown(page, max_chars)
+    out, receipt = await _paid(ctx, "read_url", url, analyze.to_markdown, max_chars)
     return {**out, "billing": _billing_note(receipt, PRICES["read_url"])}
 
 
 @mcp.tool(annotations=RO)
 async def page_metadata(url: str, ctx: Context) -> dict[str, Any]:
     """Title, description, canonical, lang, robots, Open Graph, JSON-LD types, H1-H3 and image alt stats."""
-    page, receipt = await _paid(ctx, "page_metadata", url)
-    return {**analyze.metadata(page), "billing": _billing_note(receipt, PRICES["page_metadata"])}
+    out, receipt = await _paid(ctx, "page_metadata", url, analyze.metadata)
+    return {**out, "billing": _billing_note(receipt, PRICES["page_metadata"])}
 
 
 @mcp.tool(annotations=RO)
 async def extract_links(url: str, ctx: Context, limit: int = 200) -> dict[str, Any]:
     """Internal and external links on a page (deduplicated, absolute URLs, anchor text)."""
-    page, receipt = await _paid(ctx, "extract_links", url)
-    out = analyze.links(page, max(1, min(int(limit), 1000)))
+    out, receipt = await _paid(ctx, "extract_links", url, analyze.links, max(1, min(int(limit), 1000)))
     return {**out, "billing": _billing_note(receipt, PRICES["extract_links"])}
 
 
 @mcp.tool(annotations=RO)
 async def tech_stack(url: str, ctx: Context) -> dict[str, Any]:
     """Detect frameworks, CMS, analytics, payments, CDN/hosting and security headers of a site."""
-    page, receipt = await _paid(ctx, "tech_stack", url)
-    return {**analyze.tech_stack(page), "billing": _billing_note(receipt, PRICES["tech_stack"])}
+    out, receipt = await _paid(ctx, "tech_stack", url, analyze.tech_stack)
+    return {**out, "billing": _billing_note(receipt, PRICES["tech_stack"])}
 
 
 @mcp.tool(annotations=RO)
 async def seo_audit(url: str, ctx: Context) -> dict[str, Any]:
     """Scored on-page SEO audit (0-100, A-F) with 16 weighted checks and the top fixes to apply first."""
-    page, receipt = await _paid(ctx, "seo_audit", url)
-    return {**analyze.seo_audit(page), "billing": _billing_note(receipt, PRICES["seo_audit"])}
+    out, receipt = await _paid(ctx, "seo_audit", url, analyze.seo_audit)
+    return {**out, "billing": _billing_note(receipt, PRICES["seo_audit"])}
 
 
 @mcp.tool(annotations=RO)
@@ -128,14 +137,14 @@ async def compare_seo(urls: list[str], ctx: Context) -> dict[str, Any]:
     pages = []
     for u in clean:
         try:
-            pages.append(await fetch(u))
+            pages.append(_ok(await fetch(u)))
         except FetchError as exc:
             failed.append({"url": u, "error": str(exc)})
     if not pages:
         raise FetchError("None of the URLs could be fetched; nothing was charged.")
     async with billing.charge(unit * len(pages), "compare_seo", _headers(ctx)) as receipt:
         for p in pages:
-            a = analyze.seo_audit(p)
+            a = _run(analyze.seo_audit, p)
             results.append({"url": a["url"], "score": a["score"], "grade": a["grade"], "top_fixes": a["top_fixes"]})
     results.sort(key=lambda r: -r["score"])
     return {"ranking": results, "failed": failed, "billing": _billing_note(receipt, unit * len(pages))}

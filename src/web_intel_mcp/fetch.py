@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import codecs
 import ipaddress
 import os
 import socket
@@ -15,6 +16,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 MAX_BYTES = int(os.environ.get("WEB_INTEL_MAX_BYTES", 3_000_000))
 TIMEOUT = float(os.environ.get("WEB_INTEL_TIMEOUT", 15))
+TOTAL_TIMEOUT = float(os.environ.get("WEB_INTEL_TOTAL_TIMEOUT", 30))  # whole fetch, incl. redirects
 MAX_REDIRECTS = 5
 USER_AGENT = os.environ.get("WEB_INTEL_USER_AGENT", "WebIntelMCP/0.1")
 
@@ -49,6 +51,16 @@ def validate_url(url: str) -> str:
     return url
 
 
+def _check_peer(resp: httpx.Response) -> None:
+    """Re-check the address actually connected to (defeats DNS rebinding between check and connect)."""
+    if _allow_private():
+        return
+    stream = resp.extensions.get("network_stream")
+    addr = stream.get_extra_info("server_addr") if stream is not None else None
+    if addr and not ipaddress.ip_address(addr[0]).is_global:
+        raise FetchError("The host resolved to a non-public address on connect; refused.")
+
+
 async def _check_host(host: str) -> None:
     if _allow_private():
         return
@@ -62,8 +74,23 @@ async def _check_host(host: str) -> None:
             raise FetchError(f"Host {host!r} resolves to a non-public address; refused.")
 
 
+def _encoding(name: str | None) -> str:
+    try:
+        return codecs.lookup(name or "utf-8").name
+    except LookupError:
+        return "utf-8"
+
+
 async def fetch(url: str) -> Page:
+    """Fetch with a hard deadline, so a server that drips bytes cannot hold a worker forever."""
     url = validate_url(url)
+    try:
+        return await asyncio.wait_for(_fetch(url), TOTAL_TIMEOUT)
+    except asyncio.TimeoutError as exc:
+        raise FetchError(f"{url} took longer than {TOTAL_TIMEOUT:g}s; gave up.") from exc
+
+
+async def _fetch(url: str) -> Page:
     current, redirects = url, []
     start = time.perf_counter()
     async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=False,
@@ -72,6 +99,7 @@ async def fetch(url: str) -> Page:
             await _check_host(urlsplit(current).hostname or "")
             try:
                 async with client.stream("GET", current) as resp:
+                    _check_peer(resp)
                     if resp.is_redirect and "location" in resp.headers:
                         redirects.append(current)
                         current = validate_url(urljoin(current, resp.headers["location"]))
@@ -83,7 +111,7 @@ async def fetch(url: str) -> Page:
                             truncated = True
                             del buf[MAX_BYTES:]
                             break
-                    enc = resp.charset_encoding or "utf-8"
+                    enc = _encoding(resp.charset_encoding)
                     return Page(url=url, final_url=current, status=resp.status_code,
                                 headers={k.lower(): v for k, v in resp.headers.items()},
                                 text=buf.decode(enc, errors="replace"),
