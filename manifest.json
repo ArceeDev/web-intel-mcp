@@ -1,0 +1,99 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "web-intel-mcp",
+  "display_name": "Web Intel",
+  "version": "0.1.0",
+  "description": "Páginas web a Markdown limpio, metadatos, enlaces, stack técnico y auditorías SEO. Pago por uso con créditos KeyFlint.",
+  "long_description": "Lee cualquier URL y devuelve Markdown limpio, metadatos (Open Graph, JSON-LD), enlaces, stack tecnológico y una auditoría SEO puntuada. Cada llamada descuenta créditos de tu licencia KeyFlint; las herramientas pricing y credits_balance son gratis.",
+  "author": {
+    "name": "ArceeDev",
+    "url": "https://mcp.keyflint.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArceeDev/web-intel-mcp"
+  },
+  "homepage": "https://mcp.keyflint.dev",
+  "support": "https://github.com/ArceeDev/web-intel-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "uv",
+    "entry_point": "src/web_intel_mcp/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "--no-dev",
+        "--quiet",
+        "web-intel-mcp"
+      ],
+      "env": {
+        "KEYFLINT_LICENSE": "${user_config.license_key}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "read_url",
+      "description": "Fetch a web page and return its main content as clean Markdown (nav, ads and cookie banners removed)."
+    },
+    {
+      "name": "page_metadata",
+      "description": "Title, description, canonical, lang, robots, Open Graph, JSON-LD types, H1-H3 and image alt stats."
+    },
+    {
+      "name": "extract_links",
+      "description": "Internal and external links on a page (deduplicated, absolute URLs, anchor text)."
+    },
+    {
+      "name": "tech_stack",
+      "description": "Detect frameworks, CMS, analytics, payments, CDN/hosting and security headers of a site."
+    },
+    {
+      "name": "seo_audit",
+      "description": "Scored on-page SEO audit (0-100, A-F) with 16 weighted checks and the top fixes to apply first."
+    },
+    {
+      "name": "compare_seo",
+      "description": "Audit 2-5 pages (e.g. you vs competitors) and rank them. Costs seo_audit price x number of URLs."
+    },
+    {
+      "name": "pricing",
+      "description": "Credit price of each tool and where to buy credits. Free."
+    },
+    {
+      "name": "credits_balance",
+      "description": "Remaining credits on your KeyFlint license. Free."
+    }
+  ],
+  "keywords": [
+    "mcp",
+    "seo",
+    "markdown",
+    "scraping",
+    "web"
+  ],
+  "license": "BUSL-1.1",
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  },
+  "user_config": {
+    "license_key": {
+      "type": "string",
+      "title": "Licencia KeyFlint",
+      "description": "Tu licencia (empieza por LIC-). La recibes al comprar en mcp.keyflint.dev; una sola licencia sirve para todos los MCPs.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

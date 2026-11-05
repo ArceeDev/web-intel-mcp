@@ -16,24 +16,19 @@ automatically; invalid input is rejected before any debit.
 
 Prices are overridable: `WEB_INTEL_PRICES="seo_audit=5,read_url=2"`.
 
-## Two ways to sell it
+## Install
 
-**1. Hosted (recommended: paid logic stays on your server).** One process bills many buyers; each
-request carries the buyer's license.
+All you need is your KeyFlint license (`LIC-...`). The gateway URL, its public key and the checkout link have defaults.
+
+**Claude Desktop, one click:** download `web-intel-mcp-X.Y.Z.mcpb` from the [latest release](https://github.com/ArceeDev/web-intel-mcp/releases/latest), double-click it and paste your license. No terminal, no JSON.
+
+**Claude Code:**
 
 ```bash
-docker build -t web-intel .
-docker run -p 8080:8080 \
-  -e KEYFLINT_PUBLIC_KEYS=<issuer-public-hex> \
-  -e KEYFLINT_URL=https://licenses.keyflint.dev \
-  -e KEYFLINT_CHECKOUT_URL=https://<your-store>/buy \
-  web-intel
+claude mcp add web-intel -e KEYFLINT_LICENSE=LIC-... -- uvx web-intel-mcp
 ```
 
-Buyers connect to `https://<host>/mcp` (Streamable HTTP, stateless) with
-`Authorization: Bearer LIC-...` (or `X-License-Key`). Missing or forged licenses get `-32060`.
-
-**2. Local stdio (Claude Desktop, Cursor...).** The license comes from the environment.
+**Cursor, Windsurf, Claude Desktop (JSON):**
 
 ```json
 {
@@ -41,15 +36,27 @@ Buyers connect to `https://<host>/mcp` (Streamable HTTP, stateless) with
     "web-intel": {
       "command": "uvx",
       "args": ["web-intel-mcp"],
-      "env": {
-        "KEYFLINT_LICENSE": "LIC-...",
-        "KEYFLINT_PUBLIC_KEYS": "<issuer-public-hex>",
-        "KEYFLINT_URL": "https://licenses.keyflint.dev"
-      }
+      "env": { "KEYFLINT_LICENSE": "LIC-..." }
     }
   }
 }
 ```
+
+Optional: `KEYFLINT_URL`, `KEYFLINT_PUBLIC_KEYS` (fetched from the gateway and cached in `~/.keyflint/keyring.json` when unset), `KEYFLINT_CHECKOUT_URL`.
+
+## Hosted mode (sellers)
+
+Paid logic stays on your server. One process bills many buyers; each
+request carries the buyer's license.
+
+```bash
+docker build -t web-intel .
+docker run -p 8080:8080 \
+  web-intel
+```
+
+Buyers connect to `https://<host>/mcp` (Streamable HTTP, stateless) with
+`Authorization: Bearer LIC-...` (or `X-License-Key`). Missing or forged licenses get `-32060`.
 
 ## Billing flow per call
 
@@ -73,3 +80,7 @@ End-to-end with a fake KeyFlint quota gateway, locally signed licenses and a loc
 pip install -e ".[test]"
 python -m pytest -q
 ```
+
+## License
+
+Business Source License 1.1. Source available; production use needs a KeyFlint license (or must be non-commercial). Each version becomes Apache 2.0 four years after release. See [LICENSE](LICENSE).

@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "Metered MCP server: web pages to clean Markdown, metadata, links, SEO audits and tech stack. Billed per call with KeyFlint credits."
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
+license = "BUSL-1.1"
+license-files = ["LICENSE"]
 authors = [{ name = "ArceeDev" }]
 keywords = ["mcp", "seo", "markdown", "scraping", "agents"]
 dependencies = [
