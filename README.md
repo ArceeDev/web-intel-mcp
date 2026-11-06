@@ -1,5 +1,7 @@
 # Web Intel MCP
 
+<!-- mcp-name: io.github.ArceeDev/web-intel-mcp -->
+
 Agent-ready web intelligence as a pay-per-call MCP server. Licensing and credits are handled by
 [KeyFlint](https://keyflint.dev) (offline Ed25519 license check + credit ledger), used here only as the billing backend. Failed fetches are refunded
 automatically; invalid input is rejected before any debit.
