@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "web-intel-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Metered MCP server: web pages to clean Markdown, metadata, links, SEO audits and tech stack. Billed per call with KeyFlint credits."
 readme = "README.md"
 requires-python = ">=3.10"

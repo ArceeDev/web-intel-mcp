@@ -37,7 +37,7 @@ RO = ToolAnnotations(readOnlyHint=True, openWorldHint=True, idempotentHint=True)
 mcp = MCPServer(
     "web-intel-mcp",
     title="Web Intel",
-    version="0.1.0",
+    version=__version__,
     website_url="https://github.com/ArceeDev/web-intel-mcp",
     instructions=(
         "Turns web pages into agent-ready data. Paid tools cost KeyFlint credits (see `pricing`); "

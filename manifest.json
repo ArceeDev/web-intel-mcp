@@ -3,7 +3,7 @@
   "manifest_version": "0.4",
   "name": "web-intel-mcp",
   "display_name": "Web Intel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Páginas web a Markdown limpio, metadatos, enlaces, stack técnico y auditorías SEO. Pago por uso con créditos KeyFlint.",
   "long_description": "Lee cualquier URL y devuelve Markdown limpio, metadatos (Open Graph, JSON-LD), enlaces, stack tecnológico y una auditoría SEO puntuada. Cada llamada descuenta créditos de tu licencia KeyFlint; las herramientas pricing y credits_balance son gratis.",
   "author": {
