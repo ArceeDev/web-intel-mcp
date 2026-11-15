@@ -74,8 +74,9 @@ def _run(fn: Any, *args: Any) -> Any:
 
 
 async def _paid(ctx: Context, tool: str, url: str, fn: Any, *args: Any) -> tuple[dict, dict]:
+    inputs = {"url": url, "args": list(args)}
     url = validate_url(url)  # bad input is rejected before any debit
-    async with billing.charge(PRICES[tool], tool, _headers(ctx)) as receipt:
+    async with billing.charge(PRICES[tool], tool, _headers(ctx), inputs=inputs) as receipt:
         out = _run(fn, _ok(await fetch(url)), *args)
     return out, receipt
 
@@ -148,7 +149,8 @@ async def compare_seo(urls: list[str], ctx: Context) -> dict[str, Any]:
             failed.append({"url": u, "error": str(exc)})
     if not pages:
         raise FetchError("None of the URLs could be fetched; nothing was charged.")
-    async with billing.charge(unit * len(pages), "compare_seo", _headers(ctx)) as receipt:
+    async with billing.charge(unit * len(pages), "compare_seo", _headers(ctx),
+                              inputs={"urls": [p.final_url for p in pages]}) as receipt:
         for p in pages:
             a = _run(analyze.seo_audit, p)
             results.append({"url": a["url"], "score": a["score"], "grade": a["grade"], "top_fixes": a["top_fixes"]})

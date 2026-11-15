@@ -128,6 +128,7 @@ async def test_concurrent_calls_never_overdraw(gateway, monkeypatch):
     monkeypatch.setenv("WEB_INTEL_ALLOW_PRIVATE", "1")
     import web_intel_mcp.server as srv
     srv = importlib.reload(srv)
+    monkeypatch.setattr(importlib.import_module("web_intel_mcp.billing"), "DEDUP_TTL", 0.0)  # distinct calls
     from conftest import _Site
     site = _serve(_Site); url = f"http://127.0.0.1:{site.server_address[1]}/"
     async def one():
