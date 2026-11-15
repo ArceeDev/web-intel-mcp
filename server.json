@@ -3,7 +3,7 @@
   "name": "io.github.ArceeDev/web-intel-mcp",
   "title": "Web Intel",
   "description": "Web pages to clean Markdown, metadata, links, tech stack and scored SEO audits. Pay per call.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "websiteUrl": "https://mcp.keyflint.dev",
   "repository": {
     "url": "https://github.com/ArceeDev/web-intel-mcp",
@@ -14,7 +14,7 @@
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "web-intel-mcp",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       },
